@@ -9,7 +9,7 @@ A minimal x64 operating system written primarily in assembly.
 This is the very beginning.  
 Current status (v0.3): boots via GRUB into 64-bit long mode, drives a PS/2 keyboard over IRQ1, and runs a `bitos>` shell (`help`, `ver`, `echo`, `clear`, `halt`).
 
-Pre-release ISO: [bitos-v0.2.iso](https://github.com/PureBitOS/bitos/releases/download/v0.2/bitos-v0.2.iso) (v0.3 ISO with the shell lands in the next release).
+Pre-release ISO: [bitos-v0.3.iso](https://github.com/PureBitOS/bitos/releases/download/v0.3/bitos-v0.3.iso) — boots to the interactive `bitos>` shell.
 
 ## Building
 
