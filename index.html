@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BitOS — Minimal x64 OS by PureBitOS</title>
+<meta name="description" content="BitOS is a minimal x64 operating system written primarily in assembly. By PureBitOS." />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="index.html" aria-label="BitOS home">
+      <span class="brand-bit" aria-hidden="true">0/1</span>
+      <span class="brand-text"><strong>BitOS</strong><small>by PureBitOS</small></span>
+    </a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="index.html" class="active">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="packages.html">Packages</a>
+      <a class="github" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">PureBitOS • minimal x64 operating system • v0.1</p>
+      <h1>BitOS — bare metal rising.</h1>
+      <p class="lede">
+        A minimal x64 OS written primarily in assembly. It boots via Multiboot2 + GRUB,
+        clears the VGA screen, prints a welcome message, then halts. This is the very beginning.
+      </p>
+      <div class="cta-row">
+        <a class="btn primary" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="btn" href="docs.html">Read the docs</a>
+        <a class="btn" href="packages.html">Package repo</a>
+      </div>
+      <div class="quickstart">
+        <div class="quickstart-head">Quickstart <span>QEMU + GRUB ISO</span></div>
+<pre><code>git clone https://github.com/PureBitOS/bitos.git
+cd bitos
+make          # builds bitos.iso
+make run      # boots it in QEMU</code></pre>
+      </div>
+    </div>
+    <div class="hero-card" aria-label="System status">
+      <div class="card-title">system / status</div>
+      <div class="screen" aria-hidden="true">BitOS v0.1 - Bare metal rising! (x64 foundation)<span class="cursor">█</span></div>
+      <dl class="facts">
+        <div><dt>Version</dt><dd>v0.1</dd></div>
+        <div><dt>Status</dt><dd><span class="pill">boots • prints • halts</span></dd></div>
+        <div><dt>Arch</dt><dd>x64 (32-bit bootstrap)</dd></div>
+        <div><dt>Boot</dt><dd>Multiboot2 + GRUB</dd></div>
+        <div><dt>Language</dt><dd>Assembly (NASM)</dd></div>
+        <div><dt>Mascot</dt><dd>The Bit — floating, slightly smug 0/1</dd></div>
+        <div><dt>License</dt><dd>DBAD Public License 1.2</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="grid two">
+    <div class="panel">
+      <h2>What it does today</h2>
+      <ul>
+        <li>Multiboot2 header (<code>kernel/multiboot_header.asm</code>) with magic <code>0xe85250d6</code></li>
+        <li>Links at <code>1M</code> via <code>kernel/linker.ld</code> → <code>iso/boot/kernel.bin</code></li>
+        <li>Clears VGA text buffer at <code>0xb8000</code> (80×25, white-on-black)</li>
+        <li>Prints <code>"BitOS v0.1 - Bare metal rising! (x64 foundation)"</code> in light green</li>
+        <li>Disables interrupts (<code>cli</code>) and halts (<code>hlt</code> loop)</li>
+      </ul>
+      <p class="muted">Source of truth: <code>kernel/boot.asm</code>, <code>kernel/multiboot_header.asm</code>, <code>iso/boot/grub/grub.cfg</code>.</p>
+    </div>
+    <div class="panel">
+      <h2>Roadmap</h2>
+      <ol class="roadmap">
+        <li><strong>Long mode + better kernel foundation</strong> — next</li>
+        <li>Keyboard + basic shell</li>
+        <li>Simple package format + free GitHub-based package repo</li>
+        <li>Graphics / early windowing</li>
+        <li>Desktop environment (much later)</li>
+      </ol>
+      <p class="muted">Hosting: everything (code, ISOs, packages) lives free on this GitHub account. No domain, no paid hosting.</p>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Repo info — pulled from Git</h2>
+    <p class="muted">This section is generated from <code>git remote</code> + <code>git log</code> so the site always reflects the real repo.</p>
+    <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><th>GitHub</th><td><a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">https://github.com/PureBitOS/bitos</a></td></tr>
+        <tr><th>Clone</th><td><code>git clone https://github.com/PureBitOS/bitos.git</code></td></tr>
+        <tr><th>Branch</th><td><code>main</code></td></tr>
+        <tr><th>Latest commit</th><td><code>53a63f4</code> — “Initial BitOS commit - boots and prints welcome message” (2026-09-13)</td></tr>
+        <tr><th>Tracked files (HEAD)</th><td><code>.gitignore</code>, <code>LICENSE</code>, <code>Makefile</code>, <code>README.md</code>, <code>iso/boot/grub/grub.cfg</code>, <code>kernel/boot.asm</code>, <code>kernel/linker.ld</code>, <code>kernel/multiboot_header.asm</code></td></tr>
+        <tr><th>Pages</th><td>Enable GitHub Pages from branch <code>main</code> / root to publish <code>index.html</code>, <code>docs.html</code>, <code>packages.html</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="grid three">
+    <a class="card-link" href="docs.html">
+      <h3>📖 Docs</h3>
+      <p>Build requirements, boot flow, project layout, and Git workflow.</p>
+      <span>Open docs →</span>
+    </a>
+    <a class="card-link" href="packages.html">
+      <h3>📦 Packages</h3>
+      <p>Planned <code>.bit</code> package format and GitHub-hosted package index.</p>
+      <span>Open packages →</span>
+    </a>
+    <a class="card-link" href="https://github.com/PureBitOS/bitos/issues" target="_blank" rel="noopener">
+      <h3>💡 Contribute</h3>
+      <p>Roadmap is open. Keyboard driver and long-mode setup are good first tasks.</p>
+      <span>Open issues →</span>
+    </a>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p>Signed by <strong><a href="https://github.com/PureBitOS" target="_blank" rel="noopener">PureBitOS</a></strong> — BitOS © 2026 PureBitOS · <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> · License: DBAD-1.2</p>
+    <p class="muted small">Static GitHub Pages site: <code>index.html</code> · <code>docs.html</code> · <code>packages.html</code> · No build step, no tracking.</p>
+  </div>
+</footer>
+</body>
+</html>

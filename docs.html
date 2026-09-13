@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BitOS Docs — Build, Boot, and Git | PureBitOS</title>
+<meta name="description" content="BitOS documentation: building, boot process, project structure, and Git workflow." />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="index.html" aria-label="BitOS home">
+      <span class="brand-bit" aria-hidden="true">0/1</span>
+      <span class="brand-text"><strong>BitOS</strong><small>by PureBitOS</small></span>
+    </a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="index.html">Home</a>
+      <a href="docs.html" class="active">Docs</a>
+      <a href="packages.html">Packages</a>
+      <a class="github" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap docs">
+  <p class="eyebrow">docs • v0.1 • PureBitOS/bitos</p>
+  <h1>Documentation</h1>
+  <p class="lede">Everything verified against the current Git checkout (<code>main @ 53a63f4</code>, 2026-09-13). If the repo changes, update this page to match.</p>
+
+  <div class="toc panel">
+    <strong>On this page</strong>
+    <ol>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#build">Building &amp; running</a></li>
+      <li><a href="#layout">Project layout</a></li>
+      <li><a href="#boot">Boot flow</a></li>
+      <li><a href="#git">Git workflow</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+    </ol>
+  </div>
+
+  <section id="requirements" class="panel">
+    <h2>1. Requirements</h2>
+    <ul>
+      <li><code>nasm</code> — assembles <code>kernel/*.asm</code> to ELF64 objects</li>
+      <li><code>ld</code> (GNU binutils) — links with <code>kernel/linker.ld</code></li>
+      <li><code>grub-mkrescue</code> (+ xorriso) — builds bootable <code>bitos.iso</code></li>
+      <li><code>qemu-system-x86_64</code> — test boot (<code>make run</code>)</li>
+      <li><code>git</code> — clone <code>https://github.com/PureBitOS/bitos.git</code></li>
+    </ul>
+  </section>
+
+  <section id="build" class="panel">
+    <h2>2. Building &amp; running</h2>
+<pre><code>git clone https://github.com/PureBitOS/bitos.git
+cd bitos
+make          # nasm + ld + grub-mkrescue -&gt; bitos.iso
+make run      # qemu-system-x86_64 -cdrom bitos.iso -display none -serial stdio
+make clean    # removes *.o, iso/boot/kernel.bin, bitos.iso</code></pre>
+    <p>What <code>Makefile</code> does:</p>
+    <ol>
+      <li><code>nasm -f elf64 kernel/multiboot_header.asm -o kernel/multiboot_header.o</code></li>
+      <li><code>nasm -f elf64 kernel/boot.asm -o kernel/boot.o</code></li>
+      <li><code>ld -n -T kernel/linker.ld -o iso/boot/kernel.bin ...</code></li>
+      <li><code>grub-mkrescue -o bitos.iso iso</code></li>
+    </ol>
+    <p class="muted">Note: <code>*.o</code>, <code>*.bin</code>, <code>*.iso</code> are git-ignored (see <code>.gitignore</code>). Don't commit build artifacts.</p>
+  </section>
+
+  <section id="layout" class="panel">
+    <h2>3. Project layout</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>kernel/multiboot_header.asm</code></td><td>Multiboot2 header (magic <code>0xe85250d6</code>, arch 0, length + checksum, end tag)</td></tr>
+        <tr><td><code>kernel/boot.asm</code></td><td>32-bit entry <code>start</code>: clear VGA, print message, <code>cli</code>/<code>hlt</code></td></tr>
+        <tr><td><code>kernel/linker.ld</code></td><td><code>ENTRY(start)</code>, base <code>1M</code>, sections <code>.multiboot_header</code> + <code>.text</code></td></tr>
+        <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB entry: <code>multiboot2 /boot/kernel.bin</code> + <code>boot</code></td></tr>
+        <tr><td><code>Makefile</code></td><td>Build, run (QEMU), clean</td></tr>
+        <tr><td><code>README.md</code></td><td>Overview, mascot, roadmap, hosting notes</td></tr>
+        <tr><td><code>LICENSE</code></td><td>Don't Be A Dick Public License v1.2, © 2026 PureBitOS</td></tr>
+        <tr><td><code>index.html / docs.html / packages.html</code></td><td>This GitHub Pages site (no build step)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section id="boot" class="panel">
+    <h2>4. Boot flow (v0.1)</h2>
+    <ol>
+      <li>GRUB loads <code>/boot/kernel.bin</code> as Multiboot2 kernel.</li>
+      <li>CPU jumps to <code>start</code> in 32-bit mode.</li>
+      <li>VGA text buffer at <code>0xb8000</code> is filled with <code>0x0F20</code> (white-on-black spaces, 80×25).</li>
+      <li>Message <code>"BitOS v0.1 - Bare metal rising! (x64 foundation)"</code> is written with attribute <code>0x0A</code> (light green).</li>
+      <li><code>cli</code> then infinite <code>hlt</code> loop — system halts by design.</li>
+    </ol>
+    <p class="muted">Next milestone per roadmap: long mode + better kernel foundation, then keyboard + basic shell.</p>
+  </section>
+
+  <section id="git" class="panel">
+    <h2>5. Git workflow</h2>
+<pre><code>git remote -v
+# origin  https://github.com/PureBitOS/bitos.git (fetch)
+# origin  https://github.com/PureBitOS/bitos.git (push)
+
+git log --oneline -5
+# 53a63f4 Initial BitOS commit - boots and prints welcome message
+
+git status --short   # keep clean; build outputs are ignored
+git pull --rebase    # update before editing docs/site
+git add index.html docs.html packages.html assets/style.css
+git commit -m "docs: update GitHub Pages site"
+git push origin main</code></pre>
+    <p>GitHub Pages: repo Settings → Pages → Deploy from branch → <code>main</code> / <code>/ (root)</code>. Site URL will be <code>https://purebitos.github.io/bitos/</code>.</p>
+  </section>
+
+  <section id="troubleshooting" class="panel">
+    <h2>6. Troubleshooting</h2>
+    <ul>
+      <li><strong><code>grub-mkrescue</code> missing</strong> — install <code>grub-pc-bin</code> + <code>xorriso</code> (Debian/Ubuntu) or equivalent.</li>
+      <li><strong>QEMU opens no window</strong> — <code>make run</code> tries <code>-display none -serial stdio</code> first, then falls back to graphical QEMU.</li>
+      <li><strong>Menu shows “AetherOS”</strong> — known leftover in <code>iso/boot/grub/grub.cfg</code> menuentry name; kernel payload is still BitOS. Rename it to <code>BitOS</code> when convenient.</li>
+      <li><strong>Merge markers in README/LICENSE</strong> — if <code>git status</code> shows unmerged paths, resolve with <code>git status</code> → edit → <code>git add</code> → <code>git commit</code> before publishing.</li>
+    </ul>
+  </section>
+
+  <p><a class="btn" href="index.html">← Back home</a> <a class="btn primary" href="packages.html">Package repo →</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p>Signed by <strong><a href="https://github.com/PureBitOS" target="_blank" rel="noopener">PureBitOS</a></strong> — BitOS © 2026 PureBitOS · <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> · License: DBAD-1.2</p>
+    <p class="muted small">Docs generated from Git <code>main @ 53a63f4</code> · <code>kernel/boot.asm</code> · <code>Makefile</code> · <code>README.md</code>.</p>
+  </div>
+</footer>
+</body>
+</html>

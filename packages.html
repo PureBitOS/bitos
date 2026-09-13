@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BitOS Packages — GitHub-hosted package repo | PureBitOS</title>
+<meta name="description" content="BitOS package repository plan: simple .bit format hosted free on GitHub. By PureBitOS." />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="index.html" aria-label="BitOS home">
+      <span class="brand-bit" aria-hidden="true">0/1</span>
+      <span class="brand-text"><strong>BitOS</strong><small>by PureBitOS</small></span>
+    </a>
+    <nav class="nav" aria-label="Main navigation">
+      <a href="index.html">Home</a>
+      <a href="docs.html">Docs</a>
+      <a href="packages.html" class="active">Packages</a>
+      <a class="github" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="eyebrow">packages • roadmap step 3 • free GitHub hosting</p>
+  <h1>Package repository</h1>
+  <p class="lede">
+    BitOS v0.1 has no package manager yet — this page defines the plan from the roadmap:
+    <strong>“Simple package format + free GitHub-based package repo.”</strong>
+    Everything (code, ISOs, packages) stays on this GitHub account. No domain, no paid hosting.
+  </p>
+
+  <section class="grid two">
+    <div class="panel">
+      <h2>Status</h2>
+      <p><span class="pill">v0.1 — registry planned, 0 packages shipped</span></p>
+      <p class="muted">The kernel currently boots → prints → halts. Package support lands after long mode, keyboard, and a basic shell (roadmap steps 1–2).</p>
+      <ul>
+        <li>Source of packages: <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> releases + Pages</li>
+        <li>Distribution: static files over HTTPS (GitHub Releases / raw / Pages)</li>
+        <li>Install story (planned): shell fetches <code>.bit</code> file → verifies manifest → extracts to RAM disk</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Planned <code>.bit</code> format (draft)</h2>
+<pre><code>{
+  "name": "hello",
+  "version": "0.1.0",
+  "arch": "x64",
+  "bitos": "&gt;=0.2",
+  "entry": "/bin/hello",
+  "files": ["bin/hello", "share/hello.txt"],
+  "sha256": "&lt;hex&gt;"
+}</code></pre>
+      <ul>
+        <li>Single archive (e.g. <code>hello-0.1.0-x64.bit</code> = tar/zstd + <code>manifest.json</code>)</li>
+        <li>Manifest holds name, version, arch, min BitOS version, entry point, file list, hash</li>
+        <li>Registry index is a static <code>packages.json</code> served from GitHub Pages</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Registry index (from Git)</h2>
+    <p class="muted">Today the index is empty. When packages land, list them here and mirror in <code>packages.json</code>. Example row shows the intended schema.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Package</th><th>Version</th><th>Arch</th><th>Requires</th><th>Download</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>hello</code> (example)</td>
+          <td><code>0.1.0</code></td>
+          <td><code>x64</code></td>
+          <td><code>BitOS ≥ 0.2 + shell</code></td>
+          <td><span class="muted">pending — will be a GitHub Release asset</span></td>
+          <td><span class="pill">planned</span></td>
+        </tr>
+        <tr>
+          <td colspan="6" class="muted">No packages published for v0.1. Run <code>git tag</code> / <code>git log</code> in <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> to confirm — latest is <code>53a63f4</code> (2026-09-13), no tags yet.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+<pre><code># How a future release would publish a package (entirely with Git + GitHub)
+git tag v0.2-shell
+git push origin v0.2-shell
+# -&gt; attach hello-0.1.0-x64.bit to the GitHub Release
+# -&gt; append entry to packages.json on the Pages branch/folder</code></pre>
+  </section>
+
+  <section class="grid two">
+    <div class="panel">
+      <h2>For package authors (draft)</h2>
+      <ol>
+        <li>Build a static binary for BitOS x64.</li>
+        <li>Add <code>manifest.json</code> (schema above) + SHA-256.</li>
+        <li>Pack as <code>&lt;name&gt;-&lt;version&gt;-x64.bit</code>.</li>
+        <li>Open a PR against <code>PureBitOS/bitos</code> with the <code>.bit</code> link + manifest.</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h2>Hosting — free, Git only</h2>
+      <ul>
+        <li>Code: <code>main</code> branch of <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a></li>
+        <li>ISOs: GitHub Releases (e.g. <code>bitos-v0.1.iso</code>)</li>
+        <li>Packages: Release assets + static <code>packages.json</code> on Pages</li>
+        <li>Site: this folder — <code>index.html</code>, <code>docs.html</code>, <code>packages.html</code></li>
+      </ul>
+      <p><code>git clone https://github.com/PureBitOS/bitos.git</code></p>
+    </div>
+  </section>
+
+  <p><a class="btn" href="docs.html">← Docs</a> <a class="btn primary" href="index.html">Back home</a></p>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p>Signed by <strong><a href="https://github.com/PureBitOS" target="_blank" rel="noopener">PureBitOS</a></strong> — BitOS © 2026 PureBitOS · <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> · License: DBAD-1.2</p>
+    <p class="muted small">Registry state reflects Git <code>main @ 53a63f4</code>: 0 packages shipped.</p>
+  </div>
+</footer>
+</body>
+</html>
