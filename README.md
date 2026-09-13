@@ -7,7 +7,7 @@ A minimal x64 operating system written primarily in assembly.
 **License:** Don't Be A Dick Public License (DBAD)
 
 This is the very beginning.  
-Current status: boots, clears the screen, prints a welcome message, then halts.
+Current status (v0.2): boots via GRUB, enters 64-bit long mode (own paging + GDT + stack), prints a status screen, then halts.
 
 ## Building
 
@@ -16,10 +16,12 @@ make          # builds bitos.iso
 make run      # boots it in QEMU
 ```
 
+On Windows: use WSL2 + Debian (`sudo apt install -y nasm make grub-pc-bin xorriso qemu-system-x86 binutils`), then `make` / `make run` from the repo dir. Native `nasm` + `qemu-system-x86_64` work too, but linking and ISO creation need WSL. See `docs.html` → “Building on Windows”.
+
 ## Roadmap (high level)
 
-1. Long mode + better kernel foundation
-2. Keyboard + basic shell
+1. ✅ Long mode + better kernel foundation (done — v0.2)
+2. Keyboard + basic shell (next)
 3. Simple package format + free GitHub-based package repo
 4. Graphics / early windowing
 5. Desktop environment (much later)

@@ -24,15 +24,16 @@
 </header>
 
 <main class="wrap docs">
-  <p class="eyebrow">docs • v0.1 • PureBitOS/bitos</p>
+  <p class="eyebrow">docs • v0.2 • PureBitOS/bitos</p>
   <h1>Documentation</h1>
-  <p class="lede">Everything verified against the current Git checkout (<code>main @ 53a63f4</code>, 2026-09-13). If the repo changes, update this page to match.</p>
+  <p class="lede">Everything verified against the current Git checkout (<code>main</code> — v0.2 long-mode kernel, QEMU screenshot-tested). If the repo changes, update this page to match.</p>
 
   <div class="toc panel">
     <strong>On this page</strong>
     <ol>
       <li><a href="#requirements">Requirements</a></li>
       <li><a href="#build">Building &amp; running</a></li>
+      <li><a href="#windows">Building on Windows</a></li>
       <li><a href="#layout">Project layout</a></li>
       <li><a href="#boot">Boot flow</a></li>
       <li><a href="#git">Git workflow</a></li>
@@ -68,15 +69,40 @@ make clean    # removes *.o, iso/boot/kernel.bin, bitos.iso</code></pre>
     <p class="muted">Note: <code>*.o</code>, <code>*.bin</code>, <code>*.iso</code> are git-ignored (see <code>.gitignore</code>). Don't commit build artifacts.</p>
   </section>
 
+  <section id="windows" class="panel">
+    <h2>3. Building on Windows</h2>
+    <p>Two supported paths. <strong>WSL2 (recommended)</strong> gives you the exact Linux toolchain the <code>Makefile</code> expects.</p>
+    <h3>Option A — WSL2 + Debian (recommended)</h3>
+    <ol>
+      <li>Install WSL2 and Debian:<br /><code>wsl --install -d Debian</code> (reboot if asked, create your Linux user)</li>
+      <li>Inside Debian, install the toolchain:<br />
+<pre><code>sudo apt update &amp;&amp; sudo apt install -y nasm make grub-pc-bin xorriso qemu-system-x86 binutils</code></pre></li>
+      <li>Build and run from inside WSL (adjust the path to where you cloned the repo):<br />
+<pre><code>cd /mnt/c/Users/&lt;you&gt;/Documents/bitos
+make          # -&gt; bitos.iso
+make run      # boots it in QEMU</code></pre></li>
+    </ol>
+    <h3>Option B — Native Windows (no WSL)</h3>
+    <ol>
+      <li>Install <a href="https://www.nasm.us/" target="_blank" rel="noopener">NASM</a> and <a href="https://www.qemu.org/download/#windows" target="_blank" rel="noopener">QEMU for Windows</a> (or via <code>winget install -e --id NASM.NASM --id SoftwareFreedomConservancy.QEMU</code>), and add both to <code>PATH</code>.</li>
+      <li>Assemble + boot-test natively:<br />
+<pre><code>nasm -f elf64 kernel\multiboot_header.asm -o kernel\multiboot_header.o
+nasm -f elf64 kernel\boot.asm -o kernel\boot.o
+qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
+      <li>Linking (<code>ld -n -T kernel/linker.ld</code>) and ISO creation (<code>grub-mkrescue</code>) have no native Windows builds — run just those two steps in WSL2/Git Bash, or do the full build via Option A.</li>
+    </ol>
+    <p class="muted">Cleaning: <code>make clean</code> uses <code>rm</code> (works in WSL/Git Bash). In plain <code>cmd.exe</code> use <code>make clean-win</code> instead.</p>
+  </section>
+
   <section id="layout" class="panel">
-    <h2>3. Project layout</h2>
+    <h2>4. Project layout</h2>
     <div class="table-wrap">
     <table>
       <thead><tr><th>Path</th><th>Purpose</th></tr></thead>
       <tbody>
         <tr><td><code>kernel/multiboot_header.asm</code></td><td>Multiboot2 header (magic <code>0xe85250d6</code>, arch 0, length + checksum, end tag)</td></tr>
-        <tr><td><code>kernel/boot.asm</code></td><td>32-bit entry <code>start</code>: clear VGA, print message, <code>cli</code>/<code>hlt</code></td></tr>
-        <tr><td><code>kernel/linker.ld</code></td><td><code>ENTRY(start)</code>, base <code>1M</code>, sections <code>.multiboot_header</code> + <code>.text</code></td></tr>
+        <tr><td><code>kernel/boot.asm</code></td><td>v0.2 kernel: 32-bit bootstrap (checks → paging → long mode) + 64-bit VGA output + 64-bit GDT + page tables/stack in <code>.bss</code></td></tr>
+        <tr><td><code>kernel/linker.ld</code></td><td><code>ENTRY(start)</code>, base <code>1M</code>, sections <code>.multiboot_header</code> + <code>.text</code> + <code>.rodata</code> + <code>.bss</code></td></tr>
         <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB entry: <code>multiboot2 /boot/kernel.bin</code> + <code>boot</code></td></tr>
         <tr><td><code>Makefile</code></td><td>Build, run (QEMU), clean</td></tr>
         <tr><td><code>README.md</code></td><td>Overview, mascot, roadmap, hosting notes</td></tr>
@@ -88,25 +114,27 @@ make clean    # removes *.o, iso/boot/kernel.bin, bitos.iso</code></pre>
   </section>
 
   <section id="boot" class="panel">
-    <h2>4. Boot flow (v0.1)</h2>
+    <h2>5. Boot flow (v0.2 — long mode)</h2>
     <ol>
-      <li>GRUB loads <code>/boot/kernel.bin</code> as Multiboot2 kernel.</li>
-      <li>CPU jumps to <code>start</code> in 32-bit mode.</li>
-      <li>VGA text buffer at <code>0xb8000</code> is filled with <code>0x0F20</code> (white-on-black spaces, 80×25).</li>
-      <li>Message <code>"BitOS v0.1 - Bare metal rising! (x64 foundation)"</code> is written with attribute <code>0x0A</code> (light green).</li>
+      <li>GRUB loads <code>/boot/kernel.bin</code> as a Multiboot2 kernel and jumps to <code>start</code> in 32-bit mode with magic <code>0x36d76289</code> in <code>eax</code>.</li>
+      <li>Bootstrap sets up a 16 KiB stack, then pre-flight checks: Multiboot magic (<code>ERR:M</code>), CPUID support (<code>ERR:C</code>), long-mode support via extended CPUID (<code>ERR:L</code>). Any failure prints red <code>ERR:X</code> at <code>0xb8000</code> and halts.</li>
+      <li>Identity-maps the first 1 GiB with 512 × 2 MiB pages (<code>p4 → p3 → p2</code> in <code>.bss</code>), then enables PAE (<code>CR4</code>), long-mode enable (<code>EFER.LME</code>), and paging (<code>CR0.PG</code>).</li>
+      <li>Loads the 64-bit GDT and far-jumps to <code>long_mode_start</code> — the CPU is now in 64-bit long mode.</li>
+      <li>64-bit code clears the VGA text buffer and prints three lines: <code>"BitOS v0.2 - 64-bit long mode engaged!"</code> (green), kernel foundation status (gray), next-step hint (dark gray).</li>
       <li><code>cli</code> then infinite <code>hlt</code> loop — system halts by design.</li>
     </ol>
-    <p class="muted">Next milestone per roadmap: long mode + better kernel foundation, then keyboard + basic shell.</p>
+    <p class="muted">Milestone 1 (long mode + kernel foundation) is done and QEMU screenshot-verified. Next milestone per roadmap: keyboard + basic shell.</p>
   </section>
 
   <section id="git" class="panel">
-    <h2>5. Git workflow</h2>
+    <h2>6. Git workflow</h2>
 <pre><code>git remote -v
 # origin  https://github.com/PureBitOS/bitos.git (fetch)
 # origin  https://github.com/PureBitOS/bitos.git (push)
 
 git log --oneline -5
-# 53a63f4 Initial BitOS commit - boots and prints welcome message
+# e322808 docs: add GitHub Pages site (index, docs, packages) signed by PureBitOS
+# ...
 
 git status --short   # keep clean; build outputs are ignored
 git pull --rebase    # update before editing docs/site
@@ -117,11 +145,13 @@ git push origin main</code></pre>
   </section>
 
   <section id="troubleshooting" class="panel">
-    <h2>6. Troubleshooting</h2>
+    <h2>7. Troubleshooting</h2>
     <ul>
-      <li><strong><code>grub-mkrescue</code> missing</strong> — install <code>grub-pc-bin</code> + <code>xorriso</code> (Debian/Ubuntu) or equivalent.</li>
+      <li><strong><code>grub-mkrescue</code> missing</strong> — install <code>grub-pc-bin</code> + <code>xorriso</code> (Debian/Ubuntu) or equivalent. On Windows this only exists inside WSL2 — see <a href="#windows">Building on Windows</a>.</li>
+      <li><strong><code>nasm: command not found</code> in WSL</strong> — run <code>sudo apt install -y nasm</code>. Native Windows NASM does not carry over into WSL.</li>
+      <li><strong><code>ld</code> / <code>grub-mkrescue</code> missing on native Windows</strong> — expected; they have no native builds. Use WSL2 (Option A) for link + ISO steps.</li>
       <li><strong>QEMU opens no window</strong> — <code>make run</code> tries <code>-display none -serial stdio</code> first, then falls back to graphical QEMU.</li>
-      <li><strong>Menu shows “AetherOS”</strong> — known leftover in <code>iso/boot/grub/grub.cfg</code> menuentry name; kernel payload is still BitOS. Rename it to <code>BitOS</code> when convenient.</li>
+      <li><strong>Red <code>ERR:M / ERR:C / ERR:L</code> on boot</strong> — pre-flight check failed: bad Multiboot magic, no CPUID, or no 64-bit long mode (needs an x86-64 CPU; in QEMU use <code>qemu-system-x86_64</code>).</li>
       <li><strong>Merge markers in README/LICENSE</strong> — if <code>git status</code> shows unmerged paths, resolve with <code>git status</code> → edit → <code>git add</code> → <code>git commit</code> before publishing.</li>
     </ul>
   </section>
@@ -132,7 +162,7 @@ git push origin main</code></pre>
 <footer class="site-footer">
   <div class="wrap footer-inner">
     <p>Signed by <strong><a href="https://github.com/PureBitOS" target="_blank" rel="noopener">PureBitOS</a></strong> — BitOS © 2026 PureBitOS · <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> · License: DBAD-1.2</p>
-    <p class="muted small">Docs generated from Git <code>main @ 53a63f4</code> · <code>kernel/boot.asm</code> · <code>Makefile</code> · <code>README.md</code>.</p>
+    <p class="muted small">Docs generated from Git <code>main</code> (v0.2 long-mode kernel) · <code>kernel/boot.asm</code> · <code>Makefile</code> · <code>README.md</code>.</p>
   </div>
 </footer>
 </body>

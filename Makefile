@@ -14,4 +14,8 @@ run: bitos.iso
 clean:
 	rm -f kernel/*.o iso/boot/kernel.bin bitos.iso
 
-.PHONY: all run clean
+# Native Windows cmd.exe (no rm): del instead of rm
+clean-win:
+	del /Q kernel\*.o iso\boot\kernel.bin bitos.iso
+
+.PHONY: all run clean clean-win

@@ -26,11 +26,12 @@
 <main class="wrap">
   <section class="hero">
     <div class="hero-text">
-      <p class="eyebrow">PureBitOS • minimal x64 operating system • v0.1</p>
-      <h1>BitOS — bare metal rising.</h1>
+      <p class="eyebrow">PureBitOS • minimal x64 operating system • v0.2</p>
+      <h1>BitOS — 64-bit long mode engaged.</h1>
       <p class="lede">
         A minimal x64 OS written primarily in assembly. It boots via Multiboot2 + GRUB,
-        clears the VGA screen, prints a welcome message, then halts. This is the very beginning.
+        enters 64-bit long mode with its own paging, GDT and stack, prints a status
+        screen, then halts. Milestone 1 done — next up: keyboard + shell.
       </p>
       <div class="cta-row">
         <a class="btn primary" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">View on GitHub</a>
@@ -47,11 +48,11 @@ make run      # boots it in QEMU</code></pre>
     </div>
     <div class="hero-card" aria-label="System status">
       <div class="card-title">system / status</div>
-      <div class="screen" aria-hidden="true">BitOS v0.1 - Bare metal rising! (x64 foundation)<span class="cursor">█</span></div>
+      <div class="screen" aria-hidden="true">BitOS v0.2 - 64-bit long mode engaged!<span class="cursor">█</span></div>
       <dl class="facts">
-        <div><dt>Version</dt><dd>v0.1</dd></div>
-        <div><dt>Status</dt><dd><span class="pill">boots • prints • halts</span></dd></div>
-        <div><dt>Arch</dt><dd>x64 (32-bit bootstrap)</dd></div>
+        <div><dt>Version</dt><dd>v0.2</dd></div>
+        <div><dt>Status</dt><dd><span class="pill">long mode • prints • halts</span></dd></div>
+        <div><dt>Arch</dt><dd>x64 long mode (32-bit bootstrap)</dd></div>
         <div><dt>Boot</dt><dd>Multiboot2 + GRUB</dd></div>
         <div><dt>Language</dt><dd>Assembly (NASM)</dd></div>
         <div><dt>Mascot</dt><dd>The Bit — floating, slightly smug 0/1</dd></div>
@@ -62,12 +63,11 @@ make run      # boots it in QEMU</code></pre>
 
   <section class="grid two">
     <div class="panel">
-      <h2>What it does today</h2>
+      <h2>What it does today (v0.2)</h2>
       <ul>
-        <li>Multiboot2 header (<code>kernel/multiboot_header.asm</code>) with magic <code>0xe85250d6</code></li>
-        <li>Links at <code>1M</code> via <code>kernel/linker.ld</code> → <code>iso/boot/kernel.bin</code></li>
-        <li>Clears VGA text buffer at <code>0xb8000</code> (80×25, white-on-black)</li>
-        <li>Prints <code>"BitOS v0.1 - Bare metal rising! (x64 foundation)"</code> in light green</li>
+        <li>Pre-flight checks in 32-bit mode: Multiboot magic, CPUID, long-mode support (red <code>ERR:M/C/L</code> + halt on failure)</li>
+        <li>Sets up its own paging: identity-maps first 1 GiB with 512 × 2 MiB pages, enables PAE + <code>EFER.LME</code>, loads a 64-bit GDT</li>
+        <li>Far-jumps into 64-bit long mode with a 16 KiB stack, clears VGA text at <code>0xb8000</code>, prints a 3-line status screen</li>
         <li>Disables interrupts (<code>cli</code>) and halts (<code>hlt</code> loop)</li>
       </ul>
       <p class="muted">Source of truth: <code>kernel/boot.asm</code>, <code>kernel/multiboot_header.asm</code>, <code>iso/boot/grub/grub.cfg</code>.</p>
@@ -75,8 +75,8 @@ make run      # boots it in QEMU</code></pre>
     <div class="panel">
       <h2>Roadmap</h2>
       <ol class="roadmap">
-        <li><strong>Long mode + better kernel foundation</strong> — next</li>
-        <li>Keyboard + basic shell</li>
+        <li>✅ <strong>Long mode + better kernel foundation</strong> — done (v0.2)</li>
+        <li><strong>Keyboard + basic shell</strong> — next</li>
         <li>Simple package format + free GitHub-based package repo</li>
         <li>Graphics / early windowing</li>
         <li>Desktop environment (much later)</li>
@@ -94,7 +94,7 @@ make run      # boots it in QEMU</code></pre>
         <tr><th>GitHub</th><td><a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">https://github.com/PureBitOS/bitos</a></td></tr>
         <tr><th>Clone</th><td><code>git clone https://github.com/PureBitOS/bitos.git</code></td></tr>
         <tr><th>Branch</th><td><code>main</code></td></tr>
-        <tr><th>Latest commit</th><td><code>53a63f4</code> — “Initial BitOS commit - boots and prints welcome message” (2026-09-13)</td></tr>
+        <tr><th>Latest commit</th><td><code>main</code> — v0.2 long-mode kernel (see <code>git log --oneline</code>; site updated with each milestone)</td></tr>
         <tr><th>Tracked files (HEAD)</th><td><code>.gitignore</code>, <code>LICENSE</code>, <code>Makefile</code>, <code>README.md</code>, <code>iso/boot/grub/grub.cfg</code>, <code>kernel/boot.asm</code>, <code>kernel/linker.ld</code>, <code>kernel/multiboot_header.asm</code></td></tr>
         <tr><th>Pages</th><td>Enable GitHub Pages from branch <code>main</code> / root to publish <code>index.html</code>, <code>docs.html</code>, <code>packages.html</code></td></tr>
       </tbody>
@@ -115,7 +115,7 @@ make run      # boots it in QEMU</code></pre>
     </a>
     <a class="card-link" href="https://github.com/PureBitOS/bitos/issues" target="_blank" rel="noopener">
       <h3>💡 Contribute</h3>
-      <p>Roadmap is open. Keyboard driver and long-mode setup are good first tasks.</p>
+      <p>Roadmap is open. Keyboard driver and basic shell are the next milestone.</p>
       <span>Open issues →</span>
     </a>
   </section>
