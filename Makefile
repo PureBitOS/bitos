@@ -1,9 +1,13 @@
+ASM_SRCS := kernel/multiboot_header.asm kernel/boot.asm kernel/vga.asm kernel/serial.asm kernel/idt.asm kernel/kbd.asm kernel/shell.asm
+ASM_OBJS := $(ASM_SRCS:.asm=.o)
+
 all: bitos.iso
 
-kernel.bin: kernel/multiboot_header.asm kernel/boot.asm kernel/linker.ld
-	nasm -f elf64 kernel/multiboot_header.asm -o kernel/multiboot_header.o
-	nasm -f elf64 kernel/boot.asm -o kernel/boot.o
-	ld -n -T kernel/linker.ld -o iso/boot/kernel.bin kernel/multiboot_header.o kernel/boot.o
+kernel/%.o: kernel/%.asm
+	nasm -f elf64 $< -o $@
+
+kernel.bin: $(ASM_OBJS) kernel/linker.ld
+	ld -n -T kernel/linker.ld -o iso/boot/kernel.bin $(ASM_OBJS)
 
 bitos.iso: kernel.bin
 	grub-mkrescue -o bitos.iso iso

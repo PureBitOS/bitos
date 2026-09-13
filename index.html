@@ -6,12 +6,14 @@
 <title>BitOS — Minimal x64 OS by PureBitOS</title>
 <meta name="description" content="BitOS is a minimal x64 operating system written primarily in assembly. By PureBitOS." />
 <link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" type="image/png" href="mainlogo.png" />
+<link rel="apple-touch-icon" href="mainlogo.png" />
 </head>
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="index.html" aria-label="BitOS home">
-      <span class="brand-bit" aria-hidden="true">0/1</span>
+      <img class="brand-logo" src="mainlogo.png" alt="BitOS logo" width="38" height="38" />
       <span class="brand-text"><strong>BitOS</strong><small>by PureBitOS</small></span>
     </a>
     <nav class="nav" aria-label="Main navigation">
@@ -26,15 +28,16 @@
 <main class="wrap">
   <section class="hero">
     <div class="hero-text">
-      <p class="eyebrow">PureBitOS • minimal x64 operating system • v0.2</p>
-      <h1>BitOS — 64-bit long mode engaged.</h1>
+      <p class="eyebrow">PureBitOS • minimal x64 operating system • v0.3</p>
+      <h1>BitOS — now with keyboard + shell.</h1>
       <p class="lede">
         A minimal x64 OS written primarily in assembly. It boots via Multiboot2 + GRUB,
-        enters 64-bit long mode with its own paging, GDT and stack, prints a status
-        screen, then halts. Milestone 1 done — next up: keyboard + shell.
+        enters 64-bit long mode, drives a real PS/2 keyboard over IRQ1, and drops you
+        at a <code>bitos&gt;</code> shell (help, ver, echo, clear, halt). Try the pre-release ISO below.
       </p>
       <div class="cta-row">
-        <a class="btn primary" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="btn primary" href="https://github.com/PureBitOS/bitos/releases/download/v0.2/bitos-v0.2.iso">Download v0.2 ISO</a>
+        <a class="btn" href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">View on GitHub</a>
         <a class="btn" href="docs.html">Read the docs</a>
         <a class="btn" href="packages.html">Package repo</a>
       </div>
@@ -48,11 +51,11 @@ make run      # boots it in QEMU</code></pre>
     </div>
     <div class="hero-card" aria-label="System status">
       <div class="card-title">system / status</div>
-      <div class="screen" aria-hidden="true">BitOS v0.2 - 64-bit long mode engaged!<span class="cursor">█</span></div>
+      <div class="screen" aria-hidden="true">bitos&gt; ver<span class="cursor">█</span></div>
       <dl class="facts">
-        <div><dt>Version</dt><dd>v0.2</dd></div>
-        <div><dt>Status</dt><dd><span class="pill">long mode • prints • halts</span></dd></div>
-        <div><dt>Arch</dt><dd>x64 long mode (32-bit bootstrap)</dd></div>
+        <div><dt>Version</dt><dd>v0.3</dd></div>
+        <div><dt>Status</dt><dd><span class="pill">shell • type help + Enter</span></dd></div>
+        <div><dt>Arch</dt><dd>x64 long mode + IDT + IRQ keyboard</dd></div>
         <div><dt>Boot</dt><dd>Multiboot2 + GRUB</dd></div>
         <div><dt>Language</dt><dd>Assembly (NASM)</dd></div>
         <div><dt>Mascot</dt><dd>The Bit — floating, slightly smug 0/1</dd></div>
@@ -63,12 +66,12 @@ make run      # boots it in QEMU</code></pre>
 
   <section class="grid two">
     <div class="panel">
-      <h2>What it does today (v0.2)</h2>
+      <h2>What it does today (v0.3)</h2>
       <ul>
-        <li>Pre-flight checks in 32-bit mode: Multiboot magic, CPUID, long-mode support (red <code>ERR:M/C/L</code> + halt on failure)</li>
-        <li>Sets up its own paging: identity-maps first 1 GiB with 512 × 2 MiB pages, enables PAE + <code>EFER.LME</code>, loads a 64-bit GDT</li>
-        <li>Far-jumps into 64-bit long mode with a 16 KiB stack, clears VGA text at <code>0xb8000</code>, prints a 3-line status screen</li>
-        <li>Disables interrupts (<code>cli</code>) and halts (<code>hlt</code> loop)</li>
+        <li>Long-mode bootstrap with pre-flight checks (Multiboot magic, CPUID, LM-bit; red <code>ERR:M/C/L</code> on failure)</li>
+        <li>Own IDT + 8259 PIC remap + CPU fault handler; PS/2 keyboard on IRQ1 with US-layout scancode driver</li>
+        <li><code>bitos&gt;</code> shell: line editing, <code>help</code>, <code>ver</code>, <code>echo</code>, <code>clear</code>, <code>halt</code> — mirrored to serial for testing</li>
+        <li>Downloads: <a href="https://github.com/PureBitOS/bitos/releases/download/v0.2/bitos-v0.2.iso"><code>bitos-v0.2.iso</code> pre-release</a> (v0.3 ISO with shell lands in the next release)</li>
       </ul>
       <p class="muted">Source of truth: <code>kernel/boot.asm</code>, <code>kernel/multiboot_header.asm</code>, <code>iso/boot/grub/grub.cfg</code>.</p>
     </div>
@@ -76,7 +79,8 @@ make run      # boots it in QEMU</code></pre>
       <h2>Roadmap</h2>
       <ol class="roadmap">
         <li>✅ <strong>Long mode + better kernel foundation</strong> — done (v0.2)</li>
-        <li><strong>Keyboard + basic shell</strong> — next</li>
+        <li>✅ <strong>Keyboard + basic shell</strong> — done (v0.3)</li>
+        <li><strong>Simple package format + free GitHub-based package repo</strong> — next</li>
         <li>Simple package format + free GitHub-based package repo</li>
         <li>Graphics / early windowing</li>
         <li>Desktop environment (much later)</li>
@@ -115,7 +119,7 @@ make run      # boots it in QEMU</code></pre>
     </a>
     <a class="card-link" href="https://github.com/PureBitOS/bitos/issues" target="_blank" rel="noopener">
       <h3>💡 Contribute</h3>
-      <p>Roadmap is open. Keyboard driver and basic shell are the next milestone.</p>
+      <p>Roadmap is open. The package format + GitHub-hosted repo is the next milestone.</p>
       <span>Open issues →</span>
     </a>
   </section>

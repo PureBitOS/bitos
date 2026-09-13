@@ -44,11 +44,9 @@ pre code { background: none; padding: 0; }
 }
 .header-inner { display: flex; align-items: center; justify-content: space-between; min-height: 62px; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
-.brand-bit {
-  display: inline-grid; place-items: center;
+.brand-logo {
   width: 38px; height: 38px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), #1f6feb);
-  color: #04120a; font-family: var(--mono); font-weight: 800; font-size: 13px;
+  display: block;
   border: 1px solid rgba(255,255,255,.25);
 }
 .brand-text { line-height: 1.1; display: flex; flex-direction: column; }

@@ -7,7 +7,9 @@ A minimal x64 operating system written primarily in assembly.
 **License:** Don't Be A Dick Public License (DBAD)
 
 This is the very beginning.  
-Current status (v0.2): boots via GRUB, enters 64-bit long mode (own paging + GDT + stack), prints a status screen, then halts.
+Current status (v0.3): boots via GRUB into 64-bit long mode, drives a PS/2 keyboard over IRQ1, and runs a `bitos>` shell (`help`, `ver`, `echo`, `clear`, `halt`).
+
+Pre-release ISO: [bitos-v0.2.iso](https://github.com/PureBitOS/bitos/releases/download/v0.2/bitos-v0.2.iso) (v0.3 ISO with the shell lands in the next release).
 
 ## Building
 
@@ -21,7 +23,8 @@ On Windows: use WSL2 + Debian (`sudo apt install -y nasm make grub-pc-bin xorris
 ## Roadmap (high level)
 
 1. ✅ Long mode + better kernel foundation (done — v0.2)
-2. Keyboard + basic shell (next)
+2. ✅ Keyboard + basic shell (done — v0.3)
+3. Simple package format + free GitHub-based package repo (next)
 3. Simple package format + free GitHub-based package repo
 4. Graphics / early windowing
 5. Desktop environment (much later)

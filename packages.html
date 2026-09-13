@@ -6,12 +6,14 @@
 <title>BitOS Packages — GitHub-hosted package repo | PureBitOS</title>
 <meta name="description" content="BitOS package repository plan: simple .bit format hosted free on GitHub. By PureBitOS." />
 <link rel="stylesheet" href="assets/style.css" />
+<link rel="icon" type="image/png" href="mainlogo.png" />
+<link rel="apple-touch-icon" href="mainlogo.png" />
 </head>
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="index.html" aria-label="BitOS home">
-      <span class="brand-bit" aria-hidden="true">0/1</span>
+      <img class="brand-logo" src="mainlogo.png" alt="BitOS logo" width="38" height="38" />
       <span class="brand-text"><strong>BitOS</strong><small>by PureBitOS</small></span>
     </a>
     <nav class="nav" aria-label="Main navigation">
@@ -27,16 +29,25 @@
   <p class="eyebrow">packages • roadmap step 3 • free GitHub hosting</p>
   <h1>Package repository</h1>
   <p class="lede">
-    BitOS v0.1 has no package manager yet — this page defines the plan from the roadmap:
-    <strong>“Simple package format + free GitHub-based package repo.”</strong>
-    Everything (code, ISOs, packages) stays on this GitHub account. No domain, no paid hosting.
+    BitOS has no package manager yet — but the hosting story is already real:
+    bootable ISOs ship as <strong>GitHub Release assets</strong> on this account.
+    The <code>.bit</code> package format below is the next milestone (roadmap step 3).
   </p>
+
+  <section class="panel">
+    <h2>⬇️ Download — bootable ISOs</h2>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/PureBitOS/bitos/releases/download/v0.2/bitos-v0.2.iso">bitos-v0.2.iso (pre-release, 9 MB)</a>
+      <a class="btn" href="https://github.com/PureBitOS/bitos/releases" target="_blank" rel="noopener">All releases</a>
+    </div>
+    <p class="muted">Run it: <code>qemu-system-x86_64 -cdrom bitos-v0.2.iso</code> — v0.2 boots to a halt screen; the interactive <code>bitos&gt;</code> shell (v0.3, QEMU-tested) ships in the next release. Verify: <code>git tag -l</code> shows <code>v0.2</code>.</p>
+  </section>
 
   <section class="grid two">
     <div class="panel">
       <h2>Status</h2>
-      <p><span class="pill">v0.1 — registry planned, 0 packages shipped</span></p>
-      <p class="muted">The kernel currently boots → prints → halts. Package support lands after long mode, keyboard, and a basic shell (roadmap steps 1–2).</p>
+      <p><span class="pill">v0.3 — ISOs shipping, registry planned, 0 packages</span></p>
+      <p class="muted">The kernel now runs a shell (roadmap steps 1–2 done). Package support is the next milestone.</p>
       <ul>
         <li>Source of packages: <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> releases + Pages</li>
         <li>Distribution: static files over HTTPS (GitHub Releases / raw / Pages)</li>
@@ -78,7 +89,7 @@
           <td><span class="pill">planned</span></td>
         </tr>
         <tr>
-          <td colspan="6" class="muted">No packages published for v0.1. Run <code>git tag</code> / <code>git log</code> in <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> to confirm — latest is <code>53a63f4</code> (2026-09-13), no tags yet.</td>
+          <td colspan="6" class="muted">No packages published yet — but ISOs already ship this way: <a href="https://github.com/PureBitOS/bitos/releases" target="_blank" rel="noopener">v0.2 pre-release</a> carries <code>bitos-v0.2.iso</code> as a Release asset. <code>.bit</code> packages will follow the same pattern.</td>
         </tr>
       </tbody>
     </table>
@@ -104,7 +115,7 @@ git push origin v0.2-shell
       <h2>Hosting — free, Git only</h2>
       <ul>
         <li>Code: <code>main</code> branch of <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a></li>
-        <li>ISOs: GitHub Releases (e.g. <code>bitos-v0.1.iso</code>)</li>
+        <li>ISOs: GitHub Releases (<a href="https://github.com/PureBitOS/bitos/releases/download/v0.2/bitos-v0.2.iso"><code>bitos-v0.2.iso</code></a> live now)</li>
         <li>Packages: Release assets + static <code>packages.json</code> on Pages</li>
         <li>Site: this folder — <code>index.html</code>, <code>docs.html</code>, <code>packages.html</code></li>
       </ul>
@@ -118,7 +129,7 @@ git push origin v0.2-shell
 <footer class="site-footer">
   <div class="wrap footer-inner">
     <p>Signed by <strong><a href="https://github.com/PureBitOS" target="_blank" rel="noopener">PureBitOS</a></strong> — BitOS © 2026 PureBitOS · <a href="https://github.com/PureBitOS/bitos" target="_blank" rel="noopener">PureBitOS/bitos</a> · License: DBAD-1.2</p>
-    <p class="muted small">Registry state reflects Git <code>main @ 53a63f4</code>: 0 packages shipped.</p>
+    <p class="muted small">Registry state reflects Git <code>main</code> (v0.3 kernel): ISOs shipping, 0 packages yet.</p>
   </div>
 </footer>
 </body>

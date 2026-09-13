@@ -9,6 +9,10 @@
 ;   ERR:M = bad Multiboot2 magic | ERR:C = no CPUID | ERR:L = no long mode
 
 global start
+extern vga_clear, vga_print_c, vga_setpos
+extern serial_init, serial_print
+extern pic_remap, idt_install
+extern shell_run
 
 section .text
 bits 32
@@ -137,49 +141,52 @@ long_mode_start:
     mov gs, ax
     cld                       ; string ops go forward (lodsb/stosw below)
 
-    ; Clear VGA text buffer: 80x25 cells of white-on-black space.
-    mov edi, VGA_ADDR
-    mov eax, 0x0F200F20
-    mov ecx, (VGA_COLS * VGA_ROWS) / 2
-    rep stosd
+    call vga_clear
 
     ; Line 0 (light green): main banner.
-    mov edi, VGA_ADDR + 0 * VGA_COLS * 2
+    xor edi, edi              ; row 0
+    xor esi, esi              ; col 0
+    call vga_setpos
     mov esi, msg_banner
     mov ah, 0x0A
-    call print_string_64
+    call vga_print_c
 
     ; Line 1 (gray): foundation status.
-    mov edi, VGA_ADDR + 1 * VGA_COLS * 2
+    mov edi, 1
+    xor esi, esi
+    call vga_setpos
     mov esi, msg_status
     mov ah, 0x07
-    call print_string_64
+    call vga_print_c
 
-    ; Line 2 (dark gray): next step hint.
-    mov edi, VGA_ADDR + 2 * VGA_COLS * 2
-    mov esi, msg_next
-    mov ah, 0x08
-    call print_string_64
+    ; Shell owns the screen from row 3 on.
+    mov edi, 3
+    xor esi, esi
+    call vga_setpos
 
+    call serial_init
+    mov esi, msg_banner
+    call serial_print
+    mov esi, msg_nl
+    call serial_print
+
+    call pic_remap            ; 8259: vectors 0x20/0x28, IRQ1 open
+    call idt_install          ; exceptions + IRQ1 keyboard gate
+    mov esi, msg_kbd
+    call serial_print
+
+    sti                       ; enable keyboard interrupts
+    call shell_run            ; never returns (`halt` stops the CPU)
     cli
 .hang:
     hlt
     jmp .hang
 
-; print NUL-terminated string: rsi = chars, rdi = VGA cell ptr, ah = colour.
-print_string_64:
-    lodsb
-    test al, al
-    jz .done
-    stosw                     ; writes ax (al=char, ah=colour), rdi += 2
-    jmp print_string_64
-.done:
-    ret
-
 section .rodata
-msg_banner: db "BitOS v0.2 - 64-bit long mode engaged!", 0
-msg_status: db "kernel: stack + 1GiB paging + GDT OK | halting.", 0
-msg_next:   db "next: keyboard + basic shell.", 0
+msg_banner: db "BitOS v0.3 - keyboard + shell online!", 0
+msg_status: db "kernel: long mode + IDT + PS/2 driver OK", 0
+msg_nl:     db 0x0A, 0
+msg_kbd:    db "keyboard: PS/2 ready, shell starting", 0x0A, 0
 
 ; ---- 64-bit GDT: null / code / data ----
 align 8
