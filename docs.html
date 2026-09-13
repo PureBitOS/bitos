@@ -38,6 +38,7 @@
       <li><a href="#windows">Building on Windows</a></li>
       <li><a href="#layout">Project layout</a></li>
       <li><a href="#boot">Boot flow</a></li>
+      <li><a href="#menu">GRUB menu</a></li>
       <li><a href="#shell">Shell commands</a></li>
       <li><a href="#git">Git workflow</a></li>
       <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -110,7 +111,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
         <tr><td><code>kernel/kbd.asm</code></td><td>PS/2 scancode-set-1 driver (US layout + shift), 256-byte ring buffer</td></tr>
         <tr><td><code>kernel/shell.asm</code></td><td><code>bitos&gt;</code> shell: line editing + <code>help / ver / echo / clear / halt</code></td></tr>
         <tr><td><code>kernel/linker.ld</code></td><td><code>ENTRY(start)</code>, base <code>1M</code>, sections <code>.multiboot_header</code> + <code>.text</code> + <code>.rodata</code> + <code>.bss</code></td></tr>
-        <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB entry: <code>multiboot2 /boot/kernel.bin</code> + <code>boot</code></td></tr>
+        <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB menu (no autoboot): BitOS / Reboot / Shutdown / Firmware-setup / Debug (pre-release only)</td></tr>
         <tr><td><code>Makefile</code></td><td>Build, run (QEMU), clean</td></tr>
         <tr><td><code>README.md</code></td><td>Overview, mascot, roadmap, hosting notes</td></tr>
         <tr><td><code>LICENSE</code></td><td>Don't Be A Dick Public License v1.2, © 2026 PureBitOS</td></tr>
@@ -123,7 +124,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
   <section id="boot" class="panel">
     <h2>5. Boot flow (v0.3 — shell)</h2>
     <ol>
-      <li>GRUB loads <code>/boot/kernel.bin</code> as a Multiboot2 kernel and jumps to <code>start</code> in 32-bit mode with magic <code>0x36d76289</code> in <code>eax</code>.</li>
+      <li>GRUB shows its menu (<code>timeout=-1</code>: no autoboot — pick “BitOS v0.3”, hotkey <code>b</code>) and loads <code>/boot/kernel.bin</code> as a Multiboot2 kernel, jumping to <code>start</code> in 32-bit mode with magic <code>0x36d76289</code> in <code>eax</code>. See <a href="#menu">GRUB menu</a> for Reboot / Shutdown / Firmware / Debug entries.</li>
       <li>Bootstrap sets up a 16 KiB stack, then pre-flight checks: Multiboot magic (<code>ERR:M</code>), CPUID support (<code>ERR:C</code>), long-mode support via extended CPUID (<code>ERR:L</code>). Any failure prints red <code>ERR:X</code> at <code>0xb8000</code> and halts.</li>
       <li>Identity-maps the first 1 GiB with 512 × 2 MiB pages (<code>p4 → p3 → p2</code> in <code>.bss</code>), then enables PAE (<code>CR4</code>), long-mode enable (<code>EFER.LME</code>), and paging (<code>CR0.PG</code>).</li>
       <li>Loads the 64-bit GDT and far-jumps to <code>long_mode_start</code> — the CPU is now in 64-bit long mode.</li>
@@ -133,8 +134,26 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
     <p class="muted">Milestones 1–2 done and QEMU-tested (screenshot for v0.2, scripted typing + serial log for v0.3). Next milestone per roadmap: package format + GitHub-based repo.</p>
   </section>
 
+  <section id="menu" class="panel">
+    <h2>6. GRUB menu (no autoboot)</h2>
+    <p>GRUB does <strong>not</strong> boot BitOS on its own — <code>iso/boot/grub/grub.cfg</code> sets <code>timeout=-1</code>, so the menu waits for a choice. (Set e.g. <code>timeout=5</code> to auto-boot the default entry after 5 s.) Navigate with ↑/↓ + Enter, or the single-letter hotkeys.</p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Entry</th><th>Key</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>BitOS v0.3 (default)</td><td><code>b</code></td><td><code>multiboot2 /boot/kernel.bin</code> → boots BitOS</td></tr>
+        <tr><td>Reboot</td><td><code>r</code></td><td>Resets the machine (back to this menu)</td></tr>
+        <tr><td>Shutdown</td><td><code>s</code></td><td>ACPI power-off (QEMU exits)</td></tr>
+        <tr><td>Reboot to Firmware Setup</td><td><code>f</code></td><td>UEFI firmware setup via <code>fwsetup</code>; on BIOS boot prints a notice and returns to the menu</td></tr>
+        <tr><td>BitOS v0.3 (Debug)</td><td><code>d</code></td><td>Same boot with GRUB <code>debug=all</code> output — <strong>pre-releases only, delete this entry for stable releases</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="muted">All paths QEMU-tested: menu waits (empty serial), each entry boots/reboots/shuts down as listed, Debug boots despite debug output, firmware entry degrades gracefully on BIOS.</p>
+  </section>
+
   <section id="shell" class="panel">
-    <h2>6. Shell commands</h2>
+    <h2>7. Shell commands</h2>
     <div class="table-wrap">
     <table>
       <thead><tr><th>Command</th><th>Effect</th></tr></thead>
@@ -151,7 +170,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
   </section>
 
   <section id="git" class="panel">
-    <h2>7. Git workflow</h2>
+    <h2>8. Git workflow</h2>
 <pre><code>git remote -v
 # origin  https://github.com/PureBitOS/bitos.git (fetch)
 # origin  https://github.com/PureBitOS/bitos.git (push)
@@ -169,7 +188,7 @@ git push origin main</code></pre>
   </section>
 
   <section id="troubleshooting" class="panel">
-    <h2>8. Troubleshooting</h2>
+    <h2>9. Troubleshooting</h2>
     <ul>
       <li><strong><code>grub-mkrescue</code> missing</strong> — install <code>grub-pc-bin</code> + <code>xorriso</code> (Debian/Ubuntu) or equivalent. On Windows this only exists inside WSL2 — see <a href="#windows">Building on Windows</a>.</li>
       <li><strong><code>nasm: command not found</code> in WSL</strong> — run <code>sudo apt install -y nasm</code>. Native Windows NASM does not carry over into WSL.</li>
