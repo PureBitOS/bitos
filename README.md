@@ -24,10 +24,10 @@ On Windows: use WSL2 + Debian (`sudo apt install -y nasm make grub-pc-bin xorris
 
 1. ✅ Long mode + better kernel foundation (done — v0.2)
 2. ✅ Keyboard + basic shell (done — v0.3)
-3. Simple package format + free GitHub-based package repo (next)
-3. Simple package format + free GitHub-based package repo
-4. Graphics / early windowing
-5. Desktop environment (much later)
+3. Device drivers — PCI discovery first, then popular devices, partial ASUS M1502YA (next)
+4. Simple package format + free GitHub-based package repo
+5. Graphics / early windowing
+6. Desktop environment (much later)
 
 ## Hosting
 

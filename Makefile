@@ -1,4 +1,4 @@
-ASM_SRCS := kernel/multiboot_header.asm kernel/boot.asm kernel/vga.asm kernel/serial.asm kernel/idt.asm kernel/kbd.asm kernel/shell.asm
+ASM_SRCS := kernel/multiboot_header.asm kernel/boot.asm kernel/vga.asm kernel/serial.asm kernel/idt.asm kernel/kbd.asm kernel/shell.asm kernel/pci.asm
 ASM_OBJS := $(ASM_SRCS:.asm=.o)
 
 all: bitos.iso

@@ -109,7 +109,8 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
         <tr><td><code>kernel/serial.asm</code></td><td>COM1 driver (38400 8N1); shell mirrors all output here for <code>-serial stdio</code> testing</td></tr>
         <tr><td><code>kernel/idt.asm</code></td><td>256-entry IDT, 8259 PIC remap (IRQ1 → vector 33), CPU fault stubs, IRQ stubs</td></tr>
         <tr><td><code>kernel/kbd.asm</code></td><td>PS/2 scancode-set-1 driver (US layout + shift), 256-byte ring buffer</td></tr>
-        <tr><td><code>kernel/shell.asm</code></td><td><code>bitos&gt;</code> shell: line editing + <code>help / ver / echo / clear / halt</code></td></tr>
+        <tr><td><code>kernel/shell.asm</code></td><td><code>bitos&gt;</code> shell: line editing + <code>help / ver / echo / clear / devices / halt</code></td></tr>
+        <tr><td><code>kernel/pci.asm</code></td><td>PCI discovery (mechanism 1): recursive scan, class + popular-vendor names — groundwork for drivers</td></tr>
         <tr><td><code>kernel/linker.ld</code></td><td><code>ENTRY(start)</code>, base <code>1M</code>, sections <code>.multiboot_header</code> + <code>.text</code> + <code>.rodata</code> + <code>.bss</code></td></tr>
         <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB menu (no autoboot): BitOS / Reboot / Shutdown / Firmware-setup / Debug (pre-release only)</td></tr>
         <tr><td><code>Makefile</code></td><td>Build, run (QEMU), clean</td></tr>
@@ -131,7 +132,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
       <li>64-bit entry clears VGA, prints the banner, inits COM1 serial, remaps the PIC (master <code>0x20</code>, only IRQ1 open), installs the IDT (CPU faults + IRQ1), then <code>sti</code>.</li>
       <li><code>shell_run</code> takes over: prints <code>bitos&gt;</code>, reads PS/2 scancodes via IRQ1 into a ring buffer, echoes + edits the line, executes <code>help / ver / echo / clear / halt</code>. Unknown commands are reported; <code>halt</code> stops the CPU.</li>
     </ol>
-    <p class="muted">Milestones 1–2 done and QEMU-tested (screenshot for v0.2, scripted typing + serial log for v0.3). Next milestone per roadmap: package format + GitHub-based repo.</p>
+    <p class="muted">Milestones 1–2 done and QEMU-tested (screenshot for v0.2, scripted typing + serial log for v0.3). Next milestone per roadmap: device drivers — PCI discovery first (the <code>devices</code> command below), then popular devices.</p>
   </section>
 
   <section id="menu" class="panel">
@@ -162,6 +163,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
         <tr><td><code>ver</code></td><td>Prints <code>BitOS v0.3 (long mode + keyboard + shell)</code></td></tr>
         <tr><td><code>echo &lt;text&gt;</code></td><td>Prints the text back (bare <code>echo</code> prints a blank line)</td></tr>
         <tr><td><code>clear</code></td><td>Clears the VGA screen</td></tr>
+        <tr><td><code>devices</code></td><td>Lists PCI hardware: bus:dev.func, vendor:device, class, vendor name</td></tr>
         <tr><td><code>halt</code></td><td>Prints <code>halting. bye!</code> and stops the CPU</td></tr>
       </tbody>
     </table>

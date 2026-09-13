@@ -3,9 +3,11 @@
 ;   shell_run  (never returns; `halt` stops the CPU)
 
 global shell_run
+global sh_putc, sh_print          ; reused by pci.asm (devices output)
 extern vga_putc, vga_backspace, vga_clear
 extern serial_putc
 extern kbd_getc
+extern pci_scan
 
 section .text
 bits 64
@@ -123,6 +125,11 @@ shell_run:
     call streq
     test rax, rax
     jnz .do_halt
+    lea rsi, [shell_buf]
+    lea rdx, [cmd_devices]
+    call streq
+    test rax, rax
+    jnz .do_devices
     lea rsi, [shell_buf]         ; echo <text>?
     lea rdx, [cmd_echo]
     call streq_prefix            ; -> rax=1, rcx = rest pointer
@@ -159,6 +166,9 @@ shell_run:
 .hang:
     hlt
     jmp .hang
+.do_devices:
+    call pci_scan
+    jmp .prompt
 
 ; prefix match "echo " or bare "echo": rsi=input, rdx=cmd
 ; -> rax = 1/0, rcx = rest ("" if bare)
@@ -203,6 +213,7 @@ msg_help:    db "Commands:", 0x0A
              db "  ver        - BitOS version", 0x0A
              db "  echo <txt> - print text", 0x0A
              db "  clear      - clear screen", 0x0A
+             db "  devices    - list PCI hardware", 0x0A
              db "  halt       - stop the CPU", 0x0A, 0
 msg_ver:     db "BitOS v0.3 (long mode + keyboard + shell)", 0x0A, 0
 msg_halt:    db "halting. bye!", 0x0A, 0
@@ -210,6 +221,7 @@ cmd_help:    db "help", 0
 cmd_ver:     db "ver", 0
 cmd_clear:   db "clear", 0
 cmd_halt:    db "halt", 0
+cmd_devices: db "devices", 0
 cmd_echo:    db "echo", 0
 empty_str:   db 0
 
