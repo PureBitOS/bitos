@@ -1,0 +1,15 @@
+# Build artifacts
+*.o
+*.bin
+*.iso
+*.img
+
+# Editor / OS junk
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# QEMU / temporary
+*.qcow2
+serial.log
