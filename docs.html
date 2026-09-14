@@ -111,8 +111,13 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
         <tr><td><code>kernel/kbd.asm</code></td><td>PS/2 scancode-set-1 driver (US layout + shift), 256-byte ring buffer</td></tr>
         <tr><td><code>kernel/shell.asm</code></td><td><code>bitos&gt;</code> shell: line editing + <code>help / ver / echo / clear / devices / halt</code></td></tr>
         <tr><td><code>kernel/pci.asm</code></td><td>PCI discovery (mechanism 1): recursive scan, class + popular-vendor names — groundwork for drivers</td></tr>
+        <tr><td><code>kernel/mmap.asm</code></td><td>Multiboot2 memory-map parse → usable-RAM table for the <code>mem</code> command (driver foundation: memory before DMA/BARs)</td></tr>
+        <tr><td><code>kernel/pcibar.asm</code></td><td>PCI BAR sizing + <code>mmio_map</code> window (PDPT[510], 2 MiB pages) for the <code>bars</code> command; future USB/display/NVMe drivers consume it</td></tr>
+        <tr><td><code>kernel/xhci.asm</code></td><td>xHCI USB3 driver (stage 1): controller find/takeover/reset, DCBAA + command/event rings via <code>palloc</code> DMA memory, start, port scan</td></tr>
+        <tr><td><code>kernel/fbcon.asm</code></td><td>Linear framebuffer console (GOP/UEFI incl. HDMI mirror, VBE/BIOS): 8×8 font, scroll, cursor, <code>gfx</code> pattern; falls back to VGA text</td></tr>
+        <tr><td><code>kernel/gui.asm</code></td><td>Prism desktop + BitWM (keyboard-driven): menu, Settings (wallpaper/scale), System Info (live data), About. Launched via GRUB, not a shell command</td></tr>
         <tr><td><code>kernel/linker.ld</code></td><td><code>ENTRY(start)</code>, base <code>1M</code>, sections <code>.multiboot_header</code> + <code>.text</code> + <code>.rodata</code> + <code>.bss</code></td></tr>
-        <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB menu (no autoboot): BitOS / Reboot / Shutdown / Firmware-setup / Debug (pre-release only)</td></tr>
+        <tr><td><code>iso/boot/grub/grub.cfg</code></td><td>GRUB menu (no autoboot): BitOS / Reboot / Shutdown / Firmware-setup / Debug (pre-release only); loads video drivers (GOP/VBE) for the kernel framebuffer request</td></tr>
         <tr><td><code>Makefile</code></td><td>Build, run (QEMU), clean</td></tr>
         <tr><td><code>README.md</code></td><td>Overview, mascot, roadmap, hosting notes</td></tr>
         <tr><td><code>LICENSE</code></td><td>Don't Be A Dick Public License v1.2, © 2026 PureBitOS</td></tr>
@@ -129,7 +134,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
       <li>Bootstrap sets up a 16 KiB stack, then pre-flight checks: Multiboot magic (<code>ERR:M</code>), CPUID support (<code>ERR:C</code>), long-mode support via extended CPUID (<code>ERR:L</code>). Any failure prints red <code>ERR:X</code> at <code>0xb8000</code> and halts.</li>
       <li>Identity-maps the first 1 GiB with 512 × 2 MiB pages (<code>p4 → p3 → p2</code> in <code>.bss</code>), then enables PAE (<code>CR4</code>), long-mode enable (<code>EFER.LME</code>), and paging (<code>CR0.PG</code>).</li>
       <li>Loads the 64-bit GDT and far-jumps to <code>long_mode_start</code> — the CPU is now in 64-bit long mode.</li>
-      <li>64-bit entry clears VGA, prints the banner, inits COM1 serial, remaps the PIC (master <code>0x20</code>, only IRQ1 open), installs the IDT (CPU faults + IRQ1), then <code>sti</code>.</li>
+      <li>64-bit entry inits COM1 serial, parses the memory map, then selects the console: if GRUB provided a 32-bit linear framebuffer (GOP on UEFI — mirrored to HDMI — or VBE on BIOS, requested via the multiboot tag), it maps it and prints with the built-in 8×8 font; otherwise VGA text. Then PIC remap, IDT install, <code>sti</code>. If the kernel command line contains <code>prism</code> (the GRUB “Prism Desktop” entry), the Prism GUI starts first and drops to the shell on Esc.</li>
       <li><code>shell_run</code> takes over: prints <code>bitos&gt;</code>, reads PS/2 scancodes via IRQ1 into a ring buffer, echoes + edits the line, executes <code>help / ver / echo / clear / halt</code>. Unknown commands are reported; <code>halt</code> stops the CPU.</li>
     </ol>
     <p class="muted">Milestones 1–2 done and QEMU-tested (screenshot for v0.2, scripted typing + serial log for v0.3). Next milestone per roadmap: device drivers — PCI discovery first (the <code>devices</code> command below), then popular devices.</p>
@@ -143,6 +148,7 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
       <thead><tr><th>Entry</th><th>Key</th><th>Effect</th></tr></thead>
       <tbody>
         <tr><td>BitOS v0.3 (default)</td><td><code>b</code></td><td><code>multiboot2 /boot/kernel.bin</code> → boots BitOS</td></tr>
+        <tr><td>Prism Desktop (GUI)</td><td><code>p</code></td><td>Boots BitOS with <code>prism</code> on the kernel command line → straight into the Prism desktop (BitWM); Esc falls back to shell</td></tr>
         <tr><td>Reboot</td><td><code>r</code></td><td>Resets the machine (back to this menu)</td></tr>
         <tr><td>Shutdown</td><td><code>s</code></td><td>ACPI power-off (QEMU exits)</td></tr>
         <tr><td>Reboot to Firmware Setup</td><td><code>f</code></td><td>UEFI firmware setup via <code>fwsetup</code>; on BIOS boot prints a notice and returns to the menu</td></tr>
@@ -164,6 +170,10 @@ qemu-system-x86_64 -cdrom bitos.iso</code></pre></li>
         <tr><td><code>echo &lt;text&gt;</code></td><td>Prints the text back (bare <code>echo</code> prints a blank line)</td></tr>
         <tr><td><code>clear</code></td><td>Clears the VGA screen</td></tr>
         <tr><td><code>devices</code></td><td>Lists PCI hardware: bus:dev.func, vendor:device, class, vendor name</td></tr>
+        <tr><td><code>mem</code></td><td>Shows usable RAM regions from the Multiboot2 memory map + total MiB</td></tr>
+        <tr><td><code>bars</code></td><td>Probes PCI BAR0–5 (address/size/MMIO32/MMIO64/PIO) and maps + reads the first MMIO BAR as proof</td></tr>
+        <tr><td><code>usb</code></td><td>xHCI bring-up (find → takeover → reset → rings → start) + per-port scan with speeds</td></tr>
+        <tr><td><code>gfx</code></td><td>Framebuffer info + colour-bars test pattern (any key returns to console)</td></tr>
         <tr><td><code>halt</code></td><td>Prints <code>halting. bye!</code> and stops the CPU</td></tr>
       </tbody>
     </table>
@@ -199,6 +209,7 @@ git push origin main</code></pre>
       <li><strong>No response to typing</strong> — the shell needs IRQ1: check PIC remap ran, IDT gate 33 is installed, and you ran <code>sti</code>. In QEMU use <code>-monitor stdio</code> + <code>info pic</code> to inspect IRQ state.</li>
       <li><strong>Wrong characters from keyboard</strong> — driver expects scancode set 1, US layout. QEMU's default PS/2 emulation matches; real hardware with a different layout will differ.</li>
       <li><strong>Red <code>ERR:M / ERR:C / ERR:L</code> on boot</strong> — pre-flight check failed: bad Multiboot magic, no CPUID, or no 64-bit long mode (needs an x86-64 CPU; in QEMU use <code>qemu-system-x86_64</code>).</li>
+      <li><strong>Red <code>CPU FAULT #hh</code> on screen</strong> — the same fault is also logged to serial as <code>FAULT vec=.. err=.. rip=.. rsp=..</code> plus stack contents. Boot with <code>-serial stdio</code> and read the register dump instead of guessing.</li>
       <li><strong>Merge markers in README/LICENSE</strong> — if <code>git status</code> shows unmerged paths, resolve with <code>git status</code> → edit → <code>git add</code> → <code>git commit</code> before publishing.</li>
     </ul>
   </section>

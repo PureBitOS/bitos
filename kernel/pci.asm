@@ -4,6 +4,8 @@
 ; Groundwork for real drivers (popular devices + partial laptop support).
 
 global pci_scan
+global pci_count                  ; read by Prism System app
+global pci_hex                  ; reused by mmap.asm (mem command)
 extern sh_print, sh_putc
 
 section .text
@@ -36,20 +38,20 @@ pci_read:
     in eax, dx
     ret
 
-; print hex: eax = value, ecx = digits
+; print hex: rax = value (full 64-bit), ecx = digits (1..16)
 pci_hex:
     push rax
     push rbx
     push rcx
     push rdx
-    mov ebx, eax
+    mov rbx, rax
     mov edx, ecx
 .top:
     dec edx
     mov cl, dl
     shl cl, 2
-    mov eax, ebx
-    shr eax, cl
+    mov rax, rbx
+    shr rax, cl                  ; 64-bit shift: counts up to 60 work
     and al, 0x0F
     cmp al, 10
     jb .digit

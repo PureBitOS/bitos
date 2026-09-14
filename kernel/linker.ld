@@ -18,6 +18,8 @@ SECTIONS {
         *(.rodata)
     }
 
+    /* page tables need real 4K alignment */
+    . = ALIGN(4096);
     .bss :
     {
         *(COMMON)

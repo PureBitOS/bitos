@@ -9,10 +9,14 @@
 ;   ERR:M = bad Multiboot2 magic | ERR:C = no CPUID | ERR:L = no long mode
 
 global start
-extern vga_clear, vga_print_c, vga_setpos
+global p3_table                  ; PDPT for pcibar.mmio_map
+extern con_clear, con_print_c, con_setpos
+extern fb_setup
 extern serial_init, serial_print
 extern pic_remap, idt_install
+extern mmap_parse
 extern shell_run
+extern gui_run                    ; Prism desktop (GRUB "prism" arg)
 
 section .text
 bits 32
@@ -25,6 +29,7 @@ MULTIBOOT_MAGIC equ 0x36d76289
 EFER_MSR equ 0xC0000080
 
 start:
+    mov [mb_info], ebx        ; Multiboot2 info pointer (for memory map)
     mov esp, stack_top        ; bootstrap stack (see .bss)
 
     call check_multiboot
@@ -141,30 +146,33 @@ long_mode_start:
     mov gs, ax
     cld                       ; string ops go forward (lodsb/stosw below)
 
-    call vga_clear
+    call serial_init
+    mov edi, [mb_info]        ; parse Multiboot2 memory map now
+    call mmap_parse           ; (identity-mapped, < 4 GiB)
+    mov edi, [mb_info]        ; framebuffer? (GOP/HDMI or VBE, else VGA)
+    call fb_setup             ; selects + clears the console
 
     ; Line 0 (light green): main banner.
     xor edi, edi              ; row 0
     xor esi, esi              ; col 0
-    call vga_setpos
+    call con_setpos
     mov esi, msg_banner
     mov ah, 0x0A
-    call vga_print_c
+    call con_print_c
 
     ; Line 1 (gray): foundation status.
     mov edi, 1
     xor esi, esi
-    call vga_setpos
+    call con_setpos
     mov esi, msg_status
     mov ah, 0x07
-    call vga_print_c
+    call con_print_c
 
     ; Shell owns the screen from row 3 on.
     mov edi, 3
     xor esi, esi
-    call vga_setpos
+    call con_setpos
 
-    call serial_init
     mov esi, msg_banner
     call serial_print
     mov esi, msg_nl
@@ -176,11 +184,76 @@ long_mode_start:
     call serial_print
 
     sti                       ; enable keyboard interrupts
+    mov edi, [mb_info]
+    call check_prism            ; "prism" on kernel cmdline? -> GUI first
+    test eax, eax
+    jz .shell
+    call gui_run                ; Prism desktop (Esc returns here)
+.shell:
     call shell_run            ; never returns (`halt` stops the CPU)
     cli
 .hang:
     hlt
     jmp .hang
+
+; scan multiboot2 cmdline (tag 1) for "prism". rdi = mb info.
+; out: eax = 1 found, 0 not. Preserves rbx,rcx,rdx,rsi,rdi.
+check_prism:
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    mov rsi, rdi
+    mov eax, [rsi]
+    cmp eax, 8
+    jb .no
+    add rsi, 8
+.tag:
+    mov eax, [rsi]
+    cmp eax, 0
+    je .no
+    cmp eax, 1
+    je .cmdline
+    mov eax, [rsi + 4]
+    add eax, 7
+    and eax, ~7
+    add rsi, rax
+    jmp .tag
+.cmdline:
+    lea rsi, [rsi + 8]            ; NUL-terminated cmdline string
+    mov ecx, 256                  ; scan at most 256 bytes
+.scan:
+    test ecx, ecx
+    jz .no
+    mov al, [rsi]
+    test al, al
+    jz .no
+    cmp al, 'p'
+    jne .next
+    cmp byte [rsi + 1], 'r'
+    jne .next
+    cmp byte [rsi + 2], 'i'
+    jne .next
+    cmp byte [rsi + 3], 's'
+    jne .next
+    cmp byte [rsi + 4], 'm'
+    jne .next
+    mov eax, 1
+    jmp .out
+.next:
+    inc rsi
+    dec ecx
+    jmp .scan
+.no:
+    xor eax, eax
+.out:
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    ret
 
 section .rodata
 msg_banner: db "BitOS v0.3 - keyboard + shell online!", 0
@@ -202,7 +275,9 @@ gdt64:
 
 ; ---- Reserved: page tables + bootstrap stack (zeroed, in .bss) ----
 section .bss
-align 4096
+mb_info:                     ; Multiboot2 info pointer saved at entry
+    resd 1
+alignb 4096                  ; (alignb, not align: no init in NOBITS)
 p4_table:
     resb 4096
 p3_table:

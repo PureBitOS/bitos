@@ -74,6 +74,62 @@
   </section>
 
   <section class="panel">
+    <h2>🎵 BitBeats — bytebeat player</h2>
+    <p class="muted">Generative music from one line of math, BitOS demo-disc style. Pick a formula and hit play (runs entirely in your browser).</p>
+    <div class="cta-row">
+      <select id="beat-formula" aria-label="Bytebeat formula">
+        <option value="0">crowd-cheer: t*(t&gt;&gt;10&amp;42|t&gt;&gt;9&amp;76)&amp;255</option>
+        <option value="1">saw-lfo: (t*9&amp;t&gt;&gt;4|t*5&amp;t&gt;&gt;7|t*3&amp;t&gt;&gt;10)-1</option>
+        <option value="2">harsh-fm: t*(t&gt;&gt;11&t&gt;&gt;8&123|t&gt;&gt;9&86)</option>
+        <option value="3">wobble: (t&gt;&gt;6|t|t&gt;&gt;(t&gt;&gt;16))*10+((t&gt;&gt;11)&5)</option>
+        <option value="4">pulse-42k: t*((t&gt;&gt;12)&(t&gt;&gt;8)&42&t&gt;&gt;4)</option>
+      </select>
+      <button class="btn primary" id="beat-toggle" type="button">▶ Play</button>
+    </div>
+    <p class="muted small" id="beat-status">stopped • 8000 Hz 8-bit mono</p>
+  </section>
+
+  <script>
+  (function () {
+    var formulas = [
+      function (t) { return (t * (t >> 10 & 42 | t >> 9 & 76)) & 255; },
+      function (t) { return (t * 9 & t >> 4 | t * 5 & t >> 7 | t * 3 & t >> 10) - 1; },
+      function (t) { return (t * (t >> 11 & t >> 8 & 123 | t >> 9 & 86)); },
+      function (t) { return ((t >> 6 | t | t >> (t >> 16)) * 10 + ((t >> 11) & 5)); },
+      function (t) { return (t * ((t >> 12) & (t >> 8) & 42 & t >> 4)); }
+    ];
+    var ctx = null, node = null, t = 0, playing = false;
+    var sel = document.getElementById('beat-formula');
+    var btn = document.getElementById('beat-toggle');
+    var status = document.getElementById('beat-status');
+    sel.addEventListener('change', function () { t = 0; });
+    btn.addEventListener('click', function () {
+      if (!playing) {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        var fn = formulas[sel.selectedIndex | 0];
+        node = ctx.createScriptProcessor(4096, 0, 1);
+        node.onaudioprocess = function (e) {
+          var out = e.outputBuffer.getChannelData(0);
+          for (var i = 0; i < out.length; i++, t++)
+            out[i] = (((fn(t) & 255) - 128) / 128) * 0.5;
+        };
+        node.connect(ctx.destination);
+        playing = true;
+        btn.textContent = '⏸ Stop';
+        status.textContent = 'playing: ' + sel.options[sel.selectedIndex].text;
+      } else {
+        node.disconnect();
+        node = null;
+        playing = false;
+        btn.textContent = '▶ Play';
+        status.textContent = 'stopped • 8000 Hz 8-bit mono';
+      }
+    });
+  })();
+  </script>
+
+  <section class="panel">
     <h2>Registry index (from Git)</h2>
     <p class="muted">Today the index is empty. When packages land, list them here and mirror in <code>packages.json</code>. Example row shows the intended schema.</p>
     <div class="table-wrap">

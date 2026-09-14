@@ -5,6 +5,7 @@
 
 global pic_remap, idt_install, irq1_stub, irq_spurious
 extern keyboard_handler
+extern serial_print, serial_putc
 
 section .text
 bits 64
@@ -193,7 +194,62 @@ exc_table:
 ; Red "CPU FAULT #hh" + halt. [rsp] = vector.
 exc_common:
     cli
-    mov rsi, [rsp]               ; vector number
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi                      ; 48 bytes; frame now at +48
+    lea rsi, [exc_serial]
+    call serial_print
+    mov rax, [rsp + 48]           ; vec
+    call exc_hex8
+    mov al, ' '
+    call serial_putc
+    mov rax, [rsp + 56]           ; err
+    call exc_hex8
+    mov al, ' '
+    call serial_putc
+    mov rax, [rsp + 64]           ; fault rip
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rdi, [rsp + 88]           ; pre-fault rsp
+    mov rax, rdi
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rax, [rdi]                ; 4 qwords at pre-fault rsp
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rax, [rdi + 8]
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rax, [rdi + 16]
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rax, [rdi + 24]
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rax, [rdi + 32]          ; deeper stack: expect return addresses
+    call exc_hex16
+    mov al, ' '
+    call serial_putc
+    mov rax, [rdi + 40]
+    call exc_hex16
+    mov al, 0x0A
+    call serial_putc
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    mov rsi, [rsp]               ; vector number (re-read)
     mov dword [0xb8000], 0x4f554f43       ; "CU"
     mov dword [0xb8004], 0x4f204f50       ; "P "
     mov dword [0xb8008], 0x4c554146       ; "FA"
@@ -221,8 +277,46 @@ exc_common:
     add al, '0'
     ret
 
+; fault forensics over serial: rax -> hex (ecx = digits), clobbers rax/rcx
+exc_hex8:
+    push rcx
+    mov ecx, 8
+    jmp exc_hex_go
+exc_hex16:
+    push rcx
+    mov ecx, 16
+exc_hex_go:
+    push rax
+    push rbx
+    push rdx
+    mov rbx, rax
+    mov edx, ecx
+.hex_top:
+    dec edx
+    mov cl, dl
+    shl cl, 2
+    mov rax, rbx
+    shr rax, cl
+    and al, 0x0F
+    cmp al, 10
+    jb .hex_d
+    add al, 'A' - 10
+    jmp .hex_o
+.hex_d:
+    add al, '0'
+.hex_o:
+    call serial_putc
+    test edx, edx
+    jnz .hex_top
+    pop rdx
+    pop rbx
+    pop rax
+    pop rcx
+    ret
+
 section .rodata
 align 8
+exc_serial: db "FAULT vec=", 0
 idtr:
     dw 256 * 16 - 1
     dq idt

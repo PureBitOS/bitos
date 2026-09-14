@@ -28,7 +28,31 @@ keyboard_handler:
 .not_ext0:
     cmp byte [kbd_ext], 0
     je .no_ext
-    mov byte [kbd_ext], 0        ; extended key itself: ignore (arrows, etc.)
+    mov byte [kbd_ext], 0        ; extended key: arrows only, rest ignored
+    cmp bl, 0x48
+    je .arrow_up
+    cmp bl, 0x50
+    je .arrow_down
+    cmp bl, 0x4B
+    je .arrow_left
+    cmp bl, 0x4D
+    je .arrow_right
+    jmp .drain
+.arrow_up:
+    mov al, 0x90
+    call kbd_putc
+    jmp .drain
+.arrow_down:
+    mov al, 0x91
+    call kbd_putc
+    jmp .drain
+.arrow_left:
+    mov al, 0x92
+    call kbd_putc
+    jmp .drain
+.arrow_right:
+    mov al, 0x93
+    call kbd_putc
     jmp .drain
 .no_ext:
     test bl, 0x80                ; release?
@@ -45,8 +69,20 @@ keyboard_handler:
     jmp .drain
 .not_enter:
     cmp bl, 0x0E                 ; Backspace
-    jne .lookup
+    jne .check_tab
     mov al, 0x08
+    call kbd_putc
+    jmp .drain
+.check_tab:
+    cmp bl, 0x0F                 ; Tab
+    jne .check_esc
+    mov al, 0x09
+    call kbd_putc
+    jmp .drain
+.check_esc:
+    cmp bl, 0x01                 ; Esc
+    jne .lookup
+    mov al, 0x1B
     call kbd_putc
     jmp .drain
 .lookup:                         ; normal key: table by shift state
